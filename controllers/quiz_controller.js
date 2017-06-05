@@ -203,7 +203,7 @@ exports.random = function (req, res, next) {
 
 
     models.Quiz.findAll()
-    .them(function(quizzes){
+    .then(function(quizzes){
 
 
         req.session.notPlayed = req.session.notPlayed || quizzes;
