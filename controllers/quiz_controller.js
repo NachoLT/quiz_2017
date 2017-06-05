@@ -232,12 +232,12 @@ exports.randomcheck = function (req, res, next) {
 
         req.quiz.result = 'Correcta';
 
-        res.render('/quizzes/random_result', {result: result, score: req.session.score});
+        res.render('/quizzes/random_result.ejs', {result: result, score: req.session.score});
     }else{
 
         req.quiz.result = 'Incorrecta';
 
-        res.render('/quizzes/random_result', {result: result, score: req.session.score});
+        res.render('/quizzes/random_result.ejs', {result: result, score: req.session.score});
     }
 
 };
