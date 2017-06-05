@@ -3,6 +3,9 @@ var Sequelize = require('sequelize');
 
 var paginate = require('../helpers/paginate').paginate;
 
+
+var questionNumber = 0;
+
 // Autoload el quiz asociado a :quizId
 exports.load = function (req, res, next, quizId) {
 
@@ -186,4 +189,55 @@ exports.check = function (req, res, next) {
         result: result,
         answer: answer
     });
+};
+
+
+// GET /quizzes/randomplay
+exports.random = function (req, res, next) {
+
+    req.session.score = req.session.score || 0;
+
+	if(questionNumber == 0){
+            req.session.score = 0;
+        }
+
+
+    models.Quiz.findAll()
+    .them(function(quizzes){
+
+
+        req.session.notPlayed = req.session.notPlayed || quizzes;
+        if(req.session.notPlayed.length > questionNumber){
+            res.render('/quizzes/random_play.ejs', {quiz: req.session.notPlayed[questionNumber], score: req.session.score});
+        }else{
+            //throw new Error('No hay más preguntas que contestar');
+            res.render('/quizzes/random_nomore.ejs', {score: req.session.score});
+            questionNumber = 0;
+            req.session.score = 0;
+        }
+    })
+    .catch(function(error){
+         next(error);
+    });
+};
+
+// GET /quizzes/randomcheck
+exports.randomcheck = function (req, res, next) {
+
+    questionNumber = questionNumber + 1;
+
+    if(req.query.answer == answer){
+
+        req.session.score = req.session.score + 1;
+
+        req.quiz.result = 'Correcta';
+
+        res.render('/quizzes/random_result', {result: result, score: req.session.score});
+    }else{
+
+        req.quiz.result = 'Incorrecta';
+
+        res.render('/quizzes/random_result', {result: result, score: req.session.score});
+    }
+
 };
