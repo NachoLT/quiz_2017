@@ -4,6 +4,9 @@ var Sequelize = require('sequelize');
 var paginate = require('../helpers/paginate').paginate;
 
 
+var questionNumber = 0;
+
+
 // Autoload el quiz asociado a :quizId
 exports.load = function (req, res, next, quizId) {
 
@@ -192,77 +195,59 @@ exports.check = function (req, res, next) {
 
 // GET /quizzes/randomplay
 exports.random = function (req, res, next) {
-    var answer = req.query.answer || '';
-    // Inicializacion/Uso de la variable de sesion de la puntuación
+
     req.session.score = req.session.score || 0;
-    // Inicializamos el array de los contestados
-    var arrayiniCont = new Array(0)
-    req.session.Cont = req.session.Cont || arrayiniCont; 
-    var arrayini = new Array(0);
-    
-    // Obtenemos todos los quizzes
-    var quizzes = models.Quiz.findAll()
-    .then(function (quizzes) {
-        // Obtenemos un valor entre el numero de quizzes de la base de datos
-        // Inicializamos el array de los no contestados
-        for(var l in quizzes ){
-            arrayini[l]= quizzes[l].id;
+
+    models.Quiz.findAll()
+    .then(function(quizzes){
+
+        if(questionNumber == 0){
+            req.session.score = 0;
         }
-        req.session.noCont = req.session.noCont || arrayini; 
-        var rand = 0;
-        if(req.session.noCont.length === 1)
-            rand = req.session.noCont[0];
-        else
-           rand = req.session.noCont[Math.floor(Math.random() * req.session.Cont.length)];
-        
-    var myquiz = models.Quiz.findById(rand)
-    .then(function (myquiz) {
-        res.render('quizzes/randomplay', {
-            quiz: myquiz,
-            answer: answer,
-            score: req.session.score,
-            contestadasPlay: req.session.Cont,
-            NocontestadasPlay: req.session.noCont
-        });
+
+        req.session.notPlayed = req.session.notPlayed || quizzes;
+        if(req.session.notPlayed.length > questionNumber){
+            res.render('/quizzes/random_play.ejs', {quiz: req.session.notPlayed[questionNumber], score: req.session.score});
+        }else{
+            //throw new Error('No hay más preguntas que contestar');
+            res.render('/quizzes/random_nomore.ejs', {score: req.session.score});
+            questionNumber = 0;
+            req.session.score = 0;
+        }
     })
-    .catch(function (error) {
-        next(error);
+    .catch(function(error){
+         next(error);
     });
-        })
-    .catch(function (error) {
-        next(error);
-    });
-    
-    
 };
 
-// GET /quizzes/randomcheck/:quizId
+// GET /quizzes/randomcheck
 exports.randomcheck = function (req, res, next) {
+
     var answer = req.query.answer || "";
-    req.session.score = req.session.score || 0;
-    var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
+
+    var result = answer.toLowerCase().trim() == req.quiz.answer.toLowerCase().trim();
+
     if(result){
-        req.session.score++;
+
+        req.session.score = req.session.score + 1;
+
+        questionNumber++;
+
     }
-    else  {
-        req.session.score = 0;
-        req.session.Cont = new Array(0);
+
+    if(!result){
+
+        questionNumber = 0;
+
+	req.session.score = 0;
     }
-        
-    if (req.session.score === 4 ){
-        res.render('quizzes/randomnomore', {
-        score: req.session.score     
-        });
-    }
-    else{
-        res.render('quizzes/randomresult', {
-            quiz: req.quiz,
-            id:req.quiz.id,
-            result: result,
-            score: req.session.score,
-            answer: answer,
-            contestadasResult: req.session.Cont,
-            NocontestadasResult: req.session.noCont  
-        });
-    }
+
+    res.render('/quizzes/random_result.ejs', {
+	result: result,
+	score: req.session.score,
+	answer: answer,
+	quiz: req.quiz
+    });
+
 };
+
