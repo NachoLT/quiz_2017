@@ -108,4 +108,4 @@ exports.adminOrAuthorRequired = function(req, res, next){
     console.log('Operacion no valida');
     res.send(403);
   }
-}
+};
